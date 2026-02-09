@@ -1,5 +1,5 @@
 "use client";
-// This component is a placeholder for the actual analytics dashboard.
+// This compwonent is a placeholder for the actual analytics dashboard.
 import { PlatformAnalytics } from "@/app/types/admin";
 import { motion } from "framer-motion";
 
