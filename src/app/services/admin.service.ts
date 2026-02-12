@@ -5,6 +5,7 @@ import { PlatformAnalytics, PlatformSettings, CreateBusinessPayload } from "@/ap
 export interface BusinessAccount {
   business: Business;
   owner: User;
+  generatedPassword?: string;
 }
 
 const MOCK_ACCOUNTS: BusinessAccount[] = [
@@ -16,6 +17,7 @@ const MOCK_ACCOUNTS: BusinessAccount[] = [
       type: "RESTAURANT",
       address: "123 Main St, NY",
       phone: "+1 555-0199",
+      logoUrl: "",
       categories: [],
     },
     owner: {
@@ -44,7 +46,7 @@ const MOCK_ANALYTICS: PlatformAnalytics = {
   ],
 };
 
-const MOCK_SETTINGS: PlatformSettings = {
+let MOCK_SETTINGS: PlatformSettings = {
   maintenanceMode: false,
   allowNewRegistrations: true,
   platformFeePercentage: 2.5,
@@ -53,30 +55,33 @@ const MOCK_SETTINGS: PlatformSettings = {
 
 export const AdminService = {
   getAllAccounts: async (): Promise<BusinessAccount[]> => {
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 600));
     return [...MOCK_ACCOUNTS];
   },
 
   getPlatformAnalytics: async (): Promise<PlatformAnalytics> => {
     await new Promise((resolve) => setTimeout(resolve, 600));
-    return MOCK_ANALYTICS;
+    return { ...MOCK_ANALYTICS };
   },
 
   getPlatformSettings: async (): Promise<PlatformSettings> => {
     await new Promise((resolve) => setTimeout(resolve, 400));
-    return MOCK_SETTINGS;
+    return { ...MOCK_SETTINGS };
   },
 
   updatePlatformSettings: async (settings: PlatformSettings): Promise<PlatformSettings> => {
     await new Promise((resolve) => setTimeout(resolve, 800));
-    return settings;
+    MOCK_SETTINGS = { ...settings };
+    return MOCK_SETTINGS;
   },
 
   createBusinessAccount: async (data: CreateBusinessPayload): Promise<BusinessAccount> => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1200));
 
-    const newOwnerId = `owner_${Math.random().toString(36).slice(2, 9)}`;
-    const newBusinessId = `biz_${Math.random().toString(36).slice(2, 9)}`;
+    const newBusinessId = `biz_${Date.now()}`;
+    const newOwnerId = `owner_${Date.now()}`;
+    
+    const generatedPassword = Math.random().toString(36).slice(-8).toUpperCase();
 
     const newOwner: User = {
       id: newOwnerId,
@@ -95,8 +100,20 @@ export const AdminService = {
       address: data.address,
       phone: data.phoneNumber,
       categories: [],
+      logoUrl: "", 
     };
 
-    return { business: newBusiness, owner: newOwner };
+    const newAccount: BusinessAccount = {
+      business: newBusiness,
+      owner: newOwner,
+      generatedPassword
+    };
+
+    MOCK_ACCOUNTS.unshift(newAccount);
+    
+    MOCK_ANALYTICS.activeBusinesses += 1;
+    MOCK_ANALYTICS.totalUsers += 1;
+
+    return newAccount;
   },
 };

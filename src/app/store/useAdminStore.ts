@@ -7,22 +7,26 @@ interface AdminState {
   accounts: BusinessAccount[];
   analytics: PlatformAnalytics | null;
   settings: PlatformSettings | null;
+  
   isLoading: boolean;
+  isCreating: boolean;
   isSettingsLoading: boolean;
 
   fetchAccounts: () => Promise<void>;
   fetchAnalytics: () => Promise<void>;
   fetchSettings: () => Promise<void>;
   
-  createAccount: (data: CreateBusinessPayload) => Promise<boolean>;
+  createAccount: (data: CreateBusinessPayload) => Promise<string | null>; 
   updateSettings: (data: PlatformSettings) => Promise<void>;
 }
 
-export const useAdminStore = create<AdminState>((set) => ({
+export const useAdminStore = create<AdminState>((set, get) => ({
   accounts: [],
   analytics: null,
   settings: null,
+  
   isLoading: false,
+  isCreating: false,
   isSettingsLoading: false,
 
   fetchAccounts: async () => {
@@ -32,6 +36,7 @@ export const useAdminStore = create<AdminState>((set) => ({
       set({ accounts: data, isLoading: false });
     } catch (err) {
       console.error(err);
+      toast.error("Could not load businesses");
       set({ isLoading: false });
     }
   },
@@ -54,30 +59,38 @@ export const useAdminStore = create<AdminState>((set) => ({
     }
   },
 
-  createAccount: async (data) => {
-    set({ isLoading: true });
+  createAccount: async (data: CreateBusinessPayload) => {
+    set({ isCreating: true });
     try {
       const newAccount = await AdminService.createBusinessAccount(data);
-      set((state) => ({
-        accounts: [...state.accounts, newAccount],
-        isLoading: false,
-      }));
-      toast.success("Business account created successfully");
-      return true;
+      
+      const currentAccounts = get().accounts;
+      set({ 
+        accounts: [newAccount, ...currentAccounts],
+        isCreating: false 
+      });
+
+      get().fetchAnalytics();
+      
+      toast.success(`${data.businessName} created successfully`);
+      
+      return newAccount.generatedPassword || null;
     } catch (err) {
-      toast.error("Failed to create account");
-      set({ isLoading: false });
-      return false;
+      console.error(err);
+      toast.error("Failed to create business account");
+      set({ isCreating: false });
+      return null;
     }
   },
 
-  updateSettings: async (data) => {
+  updateSettings: async (data: PlatformSettings) => {
     set({ isSettingsLoading: true });
     try {
       const updated = await AdminService.updatePlatformSettings(data);
       set({ settings: updated, isSettingsLoading: false });
-      toast.success("Platform settings updated");
+      toast.success("Platform settings saved");
     } catch (err) {
+      console.error(err);
       toast.error("Failed to update settings");
       set({ isSettingsLoading: false });
     }
